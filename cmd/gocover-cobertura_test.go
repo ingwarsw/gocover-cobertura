@@ -125,7 +125,7 @@ func TestParseProfilePermissionDenied(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() { err := os.Remove(tempFile.Name()); require.NoError(t, err) }()
-	err = tempFile.Chmod(000)
+	err = tempFile.Chmod(0o00)
 	require.NoError(t, err)
 	v := Coverage{}
 	profile := Profile{FileName: tempFile.Name()}
@@ -143,14 +143,14 @@ func TestParseProfilePermissionDenied(t *testing.T) {
 }
 
 func TestConvertSetMode(t *testing.T) {
-	pipe1rd, err := os.Open("testdata/testdata_set.txt")
+	pipe1rd, err := os.Open("../../testdata/testdata_set.txt")
 	require.NoError(t, err)
 
 	pipe2rd, pipe2wr := io.Pipe()
 
 	var convwr io.Writer = pipe2wr
 	if SaveTestResults {
-		testwr, err := os.Create("testdata/testdata_set.xml")
+		testwr, err := os.Create("../../testdata/testdata_set.xml")
 		if err != nil {
 			t.Fatal("Can't open output testdata.", err)
 		}
