@@ -1,4 +1,4 @@
-module github.com/smgt/gocover-cobertura
+module github.com/ingwarsw/gocover-cobertura
 
 go 1.16
 
