@@ -20,7 +20,11 @@ import (
 
 const coberturaDTDDecl = `<!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">`
 
-var byFiles bool
+var (
+	byFiles bool
+	from    = flag.String("from", "coverage.txt", "souce coverage file")
+	to      = flag.String("to", "coverage.xml", "xml file name  convert to ")
+)
 
 func fatal(format string, a ...interface{}) {
 	_, _ = fmt.Fprintf(os.Stderr, format, a...)
@@ -52,7 +56,22 @@ func main() {
 		}
 	}
 
-	if err := convert(os.Stdin, os.Stdout, &ignore); err != nil {
+	fileFrom, err := os.Open(*from)
+	if err != nil {
+		fmt.Println("error open from file")
+		return
+	}
+	defer fileFrom.Close()
+
+	fileTo, err := os.OpenFile(*to, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	if err != nil {
+		fmt.Println("error create to file")
+		return
+	}
+
+	defer fileTo.Close()
+
+	if err := convert(fileFrom, fileTo, &ignore); err != nil {
 		fatal("code coverage conversion failed: %s", err)
 	}
 }
@@ -71,6 +90,7 @@ func convert(in io.Reader, out io.Writer, ignore *Ignore) error {
 	sources := make([]*Source, 0)
 	pkgMap := make(map[string]*packages.Package)
 	for _, pkg := range pkgs {
+		//fmt.Printf("package %v\n", pkg)
 		sources = appendIfUnique(sources, pkg.Module.Dir)
 		pkgMap[pkg.ID] = pkg
 	}
@@ -177,9 +197,16 @@ func (cov *Coverage) parseProfile(profile *Profile, pkgPkg *packages.Package, ig
 			pkg = p
 		}
 	}
+	matcher := regexp.MustCompile("github.com/kentik/[^/]*/")
+
 	if pkg == nil {
-		pkg = &Package{Name: pkgPkg.ID, Classes: []*Class{}}
+		//fmt.Printf("have null? %v\n", pkgPkg.ID)
+		pkgName := matcher.ReplaceAllString(pkgPkg.ID, "")
+		pkg = &Package{Name: pkgName, Classes: []*Class{}}
 		cov.Packages = append(cov.Packages, pkg)
+	} else {
+		//fmt.Printf("Replacing %v\n", pkg.Name)
+		pkg.Name = matcher.ReplaceAllString(pkg.Name, "")
 	}
 	visitor := &fileVisitor{
 		fset:     fset,
@@ -261,9 +288,11 @@ func (v *fileVisitor) class(n *ast.FuncDecl) *Class {
 	} else {
 		className = v.recvName(n)
 	}
+	matcher := regexp.MustCompile(".*/(.*\\.go)")
+	fileName := matcher.ReplaceAllString(v.fileName, "$1")
 	class := v.classes[className]
 	if class == nil {
-		class = &Class{Name: className, Filename: v.fileName, Methods: []*Method{}, Lines: []*Line{}}
+		class = &Class{Name: className, Filename: fileName, Methods: []*Method{}, Lines: []*Line{}}
 		v.classes[className] = class
 		v.pkg.Classes = append(v.pkg.Classes, class)
 	}
