@@ -191,22 +191,22 @@ func (cov *Coverage) parseProfile(profile *Profile, pkgPkg *packages.Package, ig
 	// TODO(boumenot): package paths are not file paths, there is a consistent separator
 	pkgPath = strings.Replace(pkgPath, "\\", "/", -1)
 
+	matcher := regexp.MustCompile("github.com/[^/]*/[^/]*/")
+	pkgName := matcher.ReplaceAllString(pkgPkg.ID, "")
 	var pkg *Package
 	for _, p := range cov.Packages {
-		if p.Name == pkgPath {
+		if p.Name == pkgName {
 			pkg = p
 		}
 	}
-	matcher := regexp.MustCompile("github.com/[^/]*/[^/]*/")
 
 	if pkg == nil {
-		//fmt.Printf("have null? %v\n", pkgPkg.ID)
-		pkgName := matcher.ReplaceAllString(pkgPkg.ID, "")
+		fmt.Printf("have null? %v\n", pkgPkg.ID)
 		pkg = &Package{Name: pkgName, Classes: []*Class{}}
 		cov.Packages = append(cov.Packages, pkg)
 	} else {
-		//fmt.Printf("Replacing %v\n", pkg.Name)
-		pkg.Name = matcher.ReplaceAllString(pkg.Name, "")
+		fmt.Printf("Replacing %v\n", pkg.Name)
+		//pkg.Name = matcher.ReplaceAllString(pkg.Name, "")
 	}
 	visitor := &fileVisitor{
 		fset:     fset,
