@@ -197,7 +197,7 @@ func (cov *Coverage) parseProfile(profile *Profile, pkgPkg *packages.Package, ig
 			pkg = p
 		}
 	}
-	matcher := regexp.MustCompile("github.com/kentik/[^/]*/")
+	matcher := regexp.MustCompile("github.com/[^/]*/[^/]*/")
 
 	if pkg == nil {
 		//fmt.Printf("have null? %v\n", pkgPkg.ID)
